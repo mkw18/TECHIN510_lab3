@@ -3,6 +3,8 @@ import sqlite3
 import streamlit as st
 from pydantic import BaseModel
 import streamlit_pydantic as sp
+from datetime import datetime
+from typing import Optional
 
 con = sqlite3.connect("todoapp.sqlite", isolation_level=None)
 cur = con.cursor()
@@ -13,11 +15,10 @@ cur.execute(
         id INTEGER PRIMARY KEY,
         name TEXT,
         description TEXT,
-        is_done BOOLEAN DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         created_by TEXT DEFAULT Kaiwen,
         category TEXT DEFAULT school,
-        state TEXT planned
+        state TEXT DEFAULT planned
     )
     """
 )
@@ -25,14 +26,18 @@ cur.execute(
 class Task(BaseModel):
     name: str
     description: str
-    is_done: bool
+    created_at: Optional[datetime] = None
+    created_by: str
+    category: str
+    state: str
 
-def toggle_is_done(is_done, row):
+def toggle_is_done():
+    global Id
     cur.execute(
         """
-        UPDATE tasks SET is_done = ? WHERE id = ?
+        UPDATE tasks SET state = ? WHERE id = ?
         """,
-        (is_done, row[0]),
+        (st.session_state[Id], Id),
     )
 
 def main():
@@ -41,9 +46,9 @@ def main():
     if data:
         cur.execute(
             """
-            INSERT INTO tasks (name, description, is_done) VALUES (?, ?, ?)
+            INSERT INTO tasks (name, description, created_at, created_by, category, state) VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (data.name, data.description, data.is_done),
+            (data.name, data.description, data.created_at, data.created_by, data.category, data.state),
         )
 
     data = cur.execute(
@@ -52,27 +57,22 @@ def main():
         """
     ).fetchall()
 
-    # HINT: how to implement a Edit button?
-    # if st.query_params.get('id') == "123":
-    #     st.write("Hello 123")
-    #     st.markdown(
-    #         f'<a target="_self" href="/" style="display: inline-block; padding: 6px 10px; background-color: #4CAF50; color: white; text-align: center; text-decoration: none; font-size: 12px; border-radius: 4px;">Back</a>',
-    #         unsafe_allow_html=True,
-    #     )
-    #     return
-
-    cols = st.columns(3)
-    cols[0].write("Done?")
+    cols = st.columns(6)
+    cols[0].write("State")
     cols[1].write("Name")
     cols[2].write("Description")
+    cols[3].write("Created At")
+    cols[4].write("Created By")
+    cols[5].write("Category")
     for row in data:
-        cols = st.columns(3)
-        cols[0].checkbox('is_done', row[3], label_visibility='hidden', key=row[0], on_change=toggle_is_done, args=(not row[3], row))
+        cols = st.columns(6)
+        global Id
+        Id = row[0]
+        cols[0].selectbox('state', ["planned", "in-progress", "done"], index = ["planned", "in-progress", "done"].index(row[6]), label_visibility='hidden', key=row[0], on_change=toggle_is_done)
         cols[1].write(row[1])
         cols[2].write(row[2])
-        # cols[2].markdown(
-        #     f'<a target="_self" href="/?id=123" style="display: inline-block; padding: 6px 10px; background-color: #4CAF50; color: white; text-align: center; text-decoration: none; font-size: 12px; border-radius: 4px;">Action Text on Button</a>',
-        #     unsafe_allow_html=True,
-        # )
+        cols[3].write(row[3])
+        cols[4].write(row[4])
+        cols[5].write(row[5])
 
 main()

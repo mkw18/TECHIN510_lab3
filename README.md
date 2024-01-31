@@ -13,3 +13,13 @@ pip install -r requirements.txt
 ```bash
 streamlit run app.py
 ```
+
+## Lessions Learned
+
+- How to create, add, delete, and update data in SQL.
+- How to list information from SQL in streamlit.
+- How to get datetime in streamlit.
+
+## Questions
+
+- How to make the 'create at' on streamlit to show in normal case.
